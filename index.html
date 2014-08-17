@@ -67,11 +67,15 @@
 	</div>
     <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
 	<script type="text/javascript">
-		$('document').ready(init);
-
-		function createGrid(){
-			//define the systems
-			var systems = [
+        /*
+         * These are the systems.  We will loop through their information to build
+         * our drag and drop grids.  The picture for each system is set in the "img"
+         * variable, ex: img:"res/img/system/home.png"
+         * Add new systems by cutting and pasting and giving a unique id, as the
+         * commented-out example at the end of the list demonstrates.
+         * If you add more, make the width of the #board CSS above wider than 1000px
+         **/
+		var systems = [
 			{
 				id:"hometheater",
 				name:"Home Theater",
@@ -85,8 +89,8 @@
 					"Specialized Option":"TV Tuner",
 					"Storage":"256 GB SSD"
 				}
-			},
-			{
+			}
+			,{
 				id:"thickclient",
 				name:"Thick Client",
 				img:"res/img/system/thick.png",
@@ -99,8 +103,8 @@
 					"Specialized Option":"Win7 32 Pro",
 					"Storage":"250 GB HDD"
 				}
-			},
-			{
+			}
+			,{
 				id:"gamingpc",
 				name:"Gaming PC",
 				img:"res/img/system/gaming.png",
@@ -114,7 +118,31 @@
 					"Storage":"1 TB HDD"
 				}
 			}
-			];
+/*
+			,{
+				id:"someothersystem",
+				name:"Some Other System",
+				img:"res/img/system/someothersystem.png",
+				components:{
+					"Motherboard":"ATX AM3",
+					"CPU":"Quad-Core 3 GHz Phenom II",
+					"Video":"Dual 1 GB GDDR5 w/HDMI",
+					"Case and Power":"800W Full ATX",
+					"RAM":"8 GB DDR3",
+					"Specialized Option":"Advanced Case Cooling",
+					"Storage":"1 TB HDD"
+				}
+*/
+			}
+		];
+
+		$('document').ready(init);
+
+        /*
+         * This creates the layout
+         **/
+		function createGrid(){
+			//define the systems
 			var toAdd = document.createDocumentFragment();
 			// create the components container
 			var components = document.createElement('div');
@@ -125,6 +153,7 @@
 			columnHeaderDiv.innerHTML = 'Components ';
 			columnHeaderDiv.style.height = '30px';
 			columnHeaderDiv.style.verticalAlign = 'middle';
+			// add the validate button
 			var validateButton = document.createElement('button');
 			validateButton.id = 'validate'
 			validateButton.innerHTML = 'Validate';
@@ -133,10 +162,12 @@
 			toAdd.appendChild(components);
 			// loop through the systems and add their components and component slots
 			for(var sys in systems){
+				// create the system column
 				var system = systems[sys];
 				var sysDiv = document.createElement('div');
 				sysDiv.id = 'system_'+system.id;
 				sysDiv.className = 'systemColumn';
+				// set the column header with system picture
 				var columnHeaderDiv = document.createElement('div');
 				columnHeaderDiv.className = 'columnHeader';
 				columnHeaderDiv.innerHTML = system.name;
@@ -146,8 +177,8 @@
 				toAdd.appendChild(sysDiv);
 				// add component to components and slot to system column
 				var items = document.createDocumentFragment();
+				// create the drag components in the components column
 				for(var component in system.components){
-					// create the drag component in the components column
 					var componentDiv = document.createElement('div');
 					componentDiv.id = 'c_'+system.id + '_' + component;
 					componentDiv.draggable = true;
@@ -156,8 +187,8 @@
 					items.appendChild(componentDiv);
 				}
 				var i = 0;
+				// this creates the slots in the system column
 				for(var component in system.components){
-					// this creates the slot in the system column
 					var dropDiv = document.createElement('div');
 					dropDiv.id = 'd_'+system.id + '_' + component;
 					dropDiv.className = 'systemComponent';
@@ -166,7 +197,7 @@
 					dropDiv.innerHTML = component;
 					sysDiv.appendChild(dropDiv);
 				}
-				// randomize the draggable component items
+				// randomize the component list
 				for (var i = items.children.length; i >= 0; i--) {
 				    items.appendChild(items.children[Math.random() * i | 0]);
 				}
@@ -175,6 +206,9 @@
 			document.getElementById('board').appendChild(toAdd);
 		}
 
+        /*
+         * This loops through the IDs and compares the parent with the child
+         **/
         function validate(){
 			var cols = document.querySelectorAll('.systemComponent');
 			[].forEach.call(cols, function(col) {
@@ -191,21 +225,27 @@
 
         function init(){
 
+        	// create our component list, and system columns with drop slots
         	createGrid();
 
+			//bind the validate function to the validate button
             $('#validate').bind('click', function(event) {
             	validate();
             });
 
+			//if it is a component item, grab the ID
             $('.item').bind('dragstart', function(event) {
             	var id = event.target.getAttribute('id');
                 event.originalEvent.dataTransfer.setData("text/plain", id);
             });
 
+			// this lets us drop, by stopping the default behavior
             $('.systemColumn').bind('dragover', function(event) {
                 event.preventDefault();
             });
 
+
+            //these three binds add dashes around valid drop targets
             $('.systemComponent').bind('dragenter', function(event) {
             	if(event.target.className == "systemComponent")
                 event.target.style.border = '1px dashed #000';
@@ -219,18 +259,20 @@
                 event.target.style.border = '';
             });
 
-			// bind the drop event on the board sections
+			// bind the drop event on system columns
   			$('.systemColumn').bind('drop', function(event) {
-	            var notecard = event.originalEvent.dataTransfer.getData("text/plain");
+	            var sourceID = event.originalEvent.dataTransfer.getData("text/plain");
 	            if(event.target.childElementCount < 1 && event.target.className == "systemComponent" || event.target.id == "components") {
-		            event.target.appendChild(document.getElementById(notecard));
+		            event.target.appendChild(document.getElementById(sourceID));
 	            } else if(event.target.childElementCount == 1 && event.target.className == "systemComponent") {
-		            document.getElementById(notecard).parentElement.appendChild(event.target.children[0]);
-		            event.target.appendChild(document.getElementById(notecard));
+	            	// swap positinos if dropping on already filled slot
+		            document.getElementById(sourceID).parentElement.appendChild(event.target.children[0]);
+		            event.target.appendChild(document.getElementById(sourceID));
 	            } else if (event.target.parentElement.id == "components") {
-		            event.target.parentElement.appendChild(document.getElementById(notecard));
+	            	// this and the last 'else if' are for dropping item back into component list
+		            event.target.parentElement.appendChild(document.getElementById(sourceID));
 	            } else if (event.target.parentElement.parentElement.id == "components") {
-		            event.target.parentElement.parentElement.appendChild(document.getElementById(notecard));
+		            event.target.parentElement.parentElement.appendChild(document.getElementById(sourceID));
 	            }
 	            event.preventDefault();
 			});
