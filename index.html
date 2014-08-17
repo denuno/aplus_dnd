@@ -146,7 +146,6 @@
 				toAdd.appendChild(sysDiv);
 				// add component to components and slot to system column
 				var items = document.createDocumentFragment();
-				var i = 0;
 				for(var component in system.components){
 					// create the drag component in the components column
 					var componentDiv = document.createElement('div');
@@ -155,13 +154,22 @@
 					componentDiv.className = 'item';
 					componentDiv.innerHTML = system.components[component];
 					items.appendChild(componentDiv);
+				}
+				var i = 0;
+				for(var component in system.components){
 					// this creates the slot in the system column
+					console.dir(component);
 					var dropDiv = document.createElement('div');
 					dropDiv.id = 'd_'+system.id + '_' + component;
 					dropDiv.className = 'systemComponent';
+					// alternate background color
 					dropDiv.style.backgroundColor = i++ % 2 == 0 ? '#eeeeee' : '';
 					dropDiv.innerHTML = component;
 					sysDiv.appendChild(dropDiv);
+				}
+				// randomize the draggable component items
+				for (var i = items.children.length; i >= 0; i--) {
+				    items.appendChild(items.children[Math.random() * i | 0]);
 				}
 			    components.appendChild(items);
 			}
