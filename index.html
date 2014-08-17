@@ -1,0 +1,217 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<title>A+ DnD</title>
+
+	<style>
+		body
+		{
+			font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+		}
+
+		#board
+		{
+			width: 1000px;
+			min-height:500px;
+			position:relative;
+		}
+
+		.columnHeader
+		{
+			text-align:center;
+			height:249px;
+			background-repeat: no-repeat;
+			background-position: bottom;
+			padding: 2px 0px;
+		}
+
+		.item
+		{
+			text-align:center;
+		}
+
+		.systemColumn
+		{
+			position:relative;
+			width: 200px;
+			min-height:150px;
+			float:left;
+			margin-right:5px;
+			border: 1px solid silver;
+		}
+
+		.systemComponent
+		{
+			float:left;
+			text-align:left;
+			width:98%;
+			margin:2px;
+			min-height:30px;
+			font-weight:bold;
+		}
+
+		*[draggable=true]
+		{
+			float:left;
+			min-width: 50px;
+			border: 1px solid silver;
+			width:95%;
+			background-color:white;
+			margin: 3px;
+		}
+
+	</style>
+	<body>
+    <div id="board">
+	</div>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
+	<script type="text/javascript">
+		$('document').ready(init);
+
+		function createGrid(){
+			//define the systems
+			var systems = [
+			{
+				id:"hometheater",
+				name:"Home Theater",
+				img:"res/img/system/home.png",
+				components:{
+					"Motherboard":"LGA1156 Mini ITX",
+					"CPU":"Dual Core Home",
+					"Video":"Wee",
+					"Case and Power":"home",
+					"RAM":"Wee",
+					"Specialized Option":"Special Home",
+					"Storage":"Wee"
+				}
+			},
+			{
+				id:"thickclient",
+				name:"Thick Client",
+				img:"res/img/system/thick.png",
+				components:{
+					"Motherboard":"Dual Thick",
+					"CPU":"Dual Core Thick",
+					"Video":"Integrated",
+					"Case and Power":"thick",
+					"RAM":"Wee",
+					"Specialized Option":"Special Thick",
+					"Storage":"Wee"
+				}
+			},
+			{
+				id:"gamingpc",
+				name:"Gaming PC",
+				img:"res/img/system/gaming.png",
+				components:{
+					"Motherboard":"Dual Core game",
+					"CPU":"Dual Core game",
+					"Video":"Something",
+					"Case and Power":"game",
+					"RAM":"Wee",
+					"Specialized Option":"Special Game",
+					"Storage":"Wee"
+				}
+			}
+			];
+			var toAdd = document.createDocumentFragment();
+			// create the components container
+			var components = document.createElement('div');
+			components.id = 'components'
+			components.className = 'systemColumn';
+			var columnHeaderDiv = document.createElement('div');
+			columnHeaderDiv.className = 'columnHeader';
+			columnHeaderDiv.innerHTML = 'Components ';
+			columnHeaderDiv.style.height = '30px';
+			columnHeaderDiv.style.verticalAlign = 'middle';
+			var validateButton = document.createElement('button');
+			validateButton.id = 'validate'
+			validateButton.innerHTML = 'Validate';
+			columnHeaderDiv.appendChild(validateButton);
+			components.appendChild(columnHeaderDiv);
+			toAdd.appendChild(components);
+			// loop through the systems and add their components and component slots
+			for(var sys in systems){
+				var system = systems[sys];
+				var sysDiv = document.createElement('div');
+				sysDiv.id = 'system_'+system.id;
+				sysDiv.className = 'systemColumn';
+				var columnHeaderDiv = document.createElement('div');
+				columnHeaderDiv.className = 'columnHeader';
+				columnHeaderDiv.innerHTML = system.name;
+				columnHeaderDiv.style.backgroundImage = 'url("'+system.img+'")';
+				//columnHeaderDiv.style.backgroundSize = "80%";
+				sysDiv.appendChild(columnHeaderDiv);
+				toAdd.appendChild(sysDiv);
+				// add component to components and slot to system column
+				var items = document.createDocumentFragment();
+				var i = 0;
+				for(var component in system.components){
+					// create the drag component in the components column
+					var componentDiv = document.createElement('div');
+					componentDiv.id = 'c_'+system.id + '_' + component;
+					componentDiv.draggable = true;
+					componentDiv.className = 'item';
+					componentDiv.innerHTML = system.components[component];
+					items.appendChild(componentDiv);
+					// this creates the slot in the system column
+					var dropDiv = document.createElement('div');
+					dropDiv.id = 'd_'+system.id + '_' + component;
+					dropDiv.className = 'systemComponent';
+					dropDiv.style.backgroundColor = i++ % 2 == 0 ? '#eeeeee' : '';
+					dropDiv.innerHTML = component;
+					sysDiv.appendChild(dropDiv);
+				}
+			    components.appendChild(items);
+			}
+			document.getElementById('board').appendChild(toAdd);
+		}
+
+        function validate(){
+			var cols = document.querySelectorAll('.systemComponent');
+			[].forEach.call(cols, function(col) {
+				var isCorrect = false;
+				if(col.getElementsByTagName('div').length > 0) {
+					var childId = col.getElementsByTagName('div')[0].id;
+					if(col.id == childId.replace(/^c_/,"d_")) {
+						isCorrect = true;
+					}
+				}
+				col.style.backgroundColor = isCorrect ? 'green' : 'red' ;
+			});
+       	}
+
+        function init(){
+
+        	createGrid();
+
+            $('#validate').bind('click', function(event) {
+            	validate();
+            });
+
+            $('.item').bind('dragstart', function(event) {
+            	var id = event.target.getAttribute('id');
+                event.originalEvent.dataTransfer.setData("text/plain", id);
+            });
+
+            $('.systemColumn').bind('dragover', function(event) {
+                event.preventDefault();
+            });
+
+			// bind the drop event on the board sections
+  			$('.systemColumn').bind('drop', function(event) {
+	            var notecard = event.originalEvent.dataTransfer.getData("text/plain");
+	            if(event.target.childElementCount < 1 && event.target.className == "systemComponent" || event.target.id == "components") {
+		            event.target.appendChild(document.getElementById(notecard));
+	            } else if (event.target.parentElement.id == "components") {
+		            event.target.parentElement.appendChild(document.getElementById(notecard));
+	            } else if (event.target.parentElement.parentElement.id == "components") {
+		            event.target.parentElement.parentElement.appendChild(document.getElementById(notecard));
+	            }
+	            event.preventDefault();
+			});
+        }
+		</script>
+	</body>
+</html>
