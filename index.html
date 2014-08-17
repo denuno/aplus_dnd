@@ -158,7 +158,6 @@
 				var i = 0;
 				for(var component in system.components){
 					// this creates the slot in the system column
-					console.dir(component);
 					var dropDiv = document.createElement('div');
 					dropDiv.id = 'd_'+system.id + '_' + component;
 					dropDiv.className = 'systemComponent';
@@ -207,10 +206,26 @@
                 event.preventDefault();
             });
 
+            $('.systemComponent').bind('dragenter', function(event) {
+            	if(event.target.className == "systemComponent")
+                event.target.style.border = '1px dashed #000';
+            });
+            $('.systemComponent').bind('dragleave', function(event) {
+            	if(event.target.className == "systemComponent")
+                event.target.style.border = '';
+            });
+            $('.systemComponent').bind('drop', function(event) {
+            	if(event.target.className == "systemComponent")
+                event.target.style.border = '';
+            });
+
 			// bind the drop event on the board sections
   			$('.systemColumn').bind('drop', function(event) {
 	            var notecard = event.originalEvent.dataTransfer.getData("text/plain");
 	            if(event.target.childElementCount < 1 && event.target.className == "systemComponent" || event.target.id == "components") {
+		            event.target.appendChild(document.getElementById(notecard));
+	            } else if(event.target.childElementCount == 1 && event.target.className == "systemComponent") {
+		            document.getElementById(notecard).parentElement.appendChild(event.target.children[0]);
 		            event.target.appendChild(document.getElementById(notecard));
 	            } else if (event.target.parentElement.id == "components") {
 		            event.target.parentElement.appendChild(document.getElementById(notecard));
