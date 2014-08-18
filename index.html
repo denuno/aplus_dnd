@@ -29,6 +29,13 @@
 		.item
 		{
 			text-align:center;
+			hover:bold;
+			cursor: pointer; cursor: hand;
+		}
+		.item:hover
+		{
+			font-weight:bold;
+
 		}
 
 		.systemColumn
@@ -132,8 +139,8 @@
 					"Specialized Option":"Advanced Case Cooling",
 					"Storage":"1 TB HDD"
 				}
-*/
 			}
+*/
 		];
 
 		$('document').ready(init);
@@ -180,8 +187,8 @@
 				// create the drag components in the components column
 				for(var component in system.components){
 					var componentDiv = document.createElement('div');
-					componentDiv.id = 'c_'+system.id + '_' + component;
 					componentDiv.draggable = true;
+					componentDiv.id = 'c_'+system.id + '_' + component;
 					componentDiv.className = 'item';
 					componentDiv.innerHTML = system.components[component];
 					items.appendChild(componentDiv);
