@@ -1,0 +1,205 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<title>A+ DnD</title>
+
+	<style>
+		body
+		{
+			font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+		}
+
+		#board
+		{
+			width: 100%;
+			position:relative;
+		}
+
+		.columnHeader
+		{
+			text-align:center;
+			height:249px;
+			background-repeat: no-repeat;
+			background-position: bottom;
+			padding: 2px 0px;
+		}
+
+		.item
+		{
+			text-align:center;
+			hover:bold;
+			cursor: pointer; cursor: hand;
+		}
+		.item:hover
+		{
+			font-weight:bold;
+
+		}
+
+		.question
+		{
+			border: 1px solid silver;
+			float:left;
+			text-align:left;
+			width:98%;
+			margin:2px;
+			min-height:30px;
+			font-weight:bold;
+		}
+
+		*[draggable=true]
+		{
+			float:left;
+			min-width: 50px;
+			border: 1px solid silver;
+			width:95%;
+			background-color:white;
+			margin: 3px;
+		}
+
+	</style>
+	<body>
+    <div id="board">
+    	<div id="answers" style="float:left; width:50%"></div>
+    	<div id="questions" style="float:left; width:50%"></div>
+	</div>
+	<button id="validate">Check answers</button>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
+	<script type="text/javascript">
+		var questions = [
+			{
+				id:"question1",
+				questionText:"what goes here?",
+				answers:[
+					{text:"this does:one", isAcceptable:true}
+					,{text:"this does not", isAcceptable:false}
+					,{text:"this does not either", isAcceptable:false}
+				]
+			}
+			,{
+				id:"question2",
+				questionText:"and what goes here?",
+				answers:[
+					{text:"this does:two", isAcceptable:true}
+					,{text:"this does not", isAcceptable:false}
+					,{text:"this does not either", isAcceptable:false}
+				]
+			}
+		];
+
+		$('document').ready(init);
+		var currentQuestion = 1;
+
+        /*
+         * This creates the layout
+         **/
+		function createGrid(){
+			//define the systems
+			var answersDiv = document.getElementById('answers');
+			var questionsDiv = document.getElementById('questions');
+			// loop through the systems and add their components and component slots
+			for(var q in questions){
+				// create the system column
+				var question = questions[q];
+				var questionDiv = document.createElement('div');
+				questionDiv.id = question.id;
+				questionDiv.className = 'question';
+				questionDiv.innerHTML = question.questionText;
+				questionsDiv.appendChild(questionDiv);
+				// add component to components and slot to system column
+				var items = document.createDocumentFragment();
+				var i = 0;
+				// this creates the slots in the system column
+				question.answers.forEach(function(answer){
+					var dropDiv = document.createElement('div');
+					dropDiv.id = 'd_'+question.id + '_' + i++;
+					dropDiv.className = 'item';
+					dropDiv.draggable = true;
+					dropDiv.innerHTML = answer.text;
+					items.appendChild(dropDiv);
+				});
+				// randomize the component list
+				for (var i = items.children.length; i >= 0; i--) {
+				    items.appendChild(items.children[Math.random() * i | 0]);
+				}
+			    answersDiv.appendChild(items);
+			}
+		}
+
+        /*
+         * This loops through the IDs and compares the parent with the child
+         **/
+        function validate(){
+	        questions.forEach(function(question){
+				var isCorrect = false;
+	        	var qDiv = document.getElementById(question.id);
+				if(qDiv.getElementsByTagName('div').length > 0) {
+					var theirAnswer = qDiv.getElementsByTagName('div')[0].innerHTML;
+				}
+				question.answers.forEach(function(answer){
+					if(theirAnswer == answer.text && answer.isAcceptable) {
+						isCorrect = true;
+					}
+				});
+				qDiv.style.backgroundColor = isCorrect ? 'green' : 'red' ;
+	        });
+       	}
+
+        function init(){
+
+        	// create our component list, and system columns with drop slots
+        	createGrid();
+
+			//bind the validate function to the validate button
+            $('#validate').bind('click', function(event) {
+            	validate();
+            });
+
+			//if it is a component item, grab the ID
+            $('.item').bind('dragstart', function(event) {
+            	var id = event.target.getAttribute('id');
+                event.originalEvent.dataTransfer.setData("text/plain", id);
+            });
+
+			// this lets us drop, by stopping the default behavior
+            $('#questions').bind('dragover', function(event) {
+                event.preventDefault();
+            });
+
+
+            //these three binds add dashes around valid drop targets
+            $('.question').bind('dragenter', function(event) {
+            	if(event.target.className == "question")
+                event.target.style.border = '1px dashed #000';
+            });
+            $('.question').bind('dragleave', function(event) {
+            	if(event.target.className == "question")
+                event.target.style.border = '';
+            });
+            $('.question').bind('drop', function(event) {
+            	if(event.target.className == "question")
+                event.target.style.border = '';
+            });
+
+			// bind the drop event on system columns
+  			$('.question').bind('drop', function(event) {
+	            var sourceID = event.originalEvent.dataTransfer.getData("text/plain");
+	            if(event.target.childElementCount < 1 && event.target.className == "question" || event.target.id == "answers") {
+		            event.target.appendChild(document.getElementById(sourceID));
+	            } else if(event.target.childElementCount == 1 && event.target.className == "question") {
+	            	// swap positinos if dropping on already filled slot
+		            document.getElementById(sourceID).parentElement.appendChild(event.target.children[0]);
+		            event.target.appendChild(document.getElementById(sourceID));
+	            } else if (event.target.parentElement.id == "answers") {
+	            	// this and the last 'else if' are for dropping item back into component list
+		            event.target.parentElement.appendChild(document.getElementById(sourceID));
+	            } else if (event.target.parentElement.parentElement.id == "answers") {
+		            event.target.parentElement.parentElement.appendChild(document.getElementById(sourceID));
+	            }
+	            event.preventDefault();
+			});
+        }
+		</script>
+	</body>
+</html>
